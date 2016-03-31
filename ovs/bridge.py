@@ -10,10 +10,24 @@ class Bridge():
     
     @decorator.check_cmd('ovs-vsctl --version > /dev/null')
     def list_br(self):
+        cmd = 'ovs-vsctl list-br'
+        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate() 
+        return [l.strip() for l in result.split('\n')] if not error else []
+                
+    @decorator.check_cmd('ovs-vsctl --version > /dev/null')
+    def exists_br(self, br_name):
+        if br_name:
+            cmd = 'ovs-vsctl br-exists {0}'.format(br_name)
+            _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+            return False if error else True
+        else:
+            raise IOError('Bridge name is NONE')
+    
+    @decorator.check_cmd('ovs-vsctl --version > /dev/null')
+    def show_br(self):
         brs, br = {}, ''
         cmd = 'ovs-vsctl show'
-        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE,
-                              shell=True).communicate()
+        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
         if error:
             return {}
         for l in result.split('\n'):
@@ -41,28 +55,20 @@ class Bridge():
                     brs[br]['Port'][phy_port]['type'] = l.replace('type: ', '')
         return brs
     
-    def exists_br(self):
-        pass
-    
-    def show_br(self):
-        pass
-    
     def add_br(self, br_name, parent = None, vlan = None):
-        if br_name != None:
+        if br_name:
             cmd = 'ovs-vsctl add-br {0}'.format(br_name)
             if parent != None and vlan != None:
                 cmd = '{0} {1} {2}'.format(cmd, parent, vlan)
-            _, error = Popen(cmd, stdout=PIPE, stderr=PIPE,
-                              shell=True).communicate()
+            _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
             return False if error else True
         else:
             raise IOError('Bridge name is NONE')
     
     def del_br(self, br_name):
-        if br_name != None:
+        if br_name:
             cmd = 'ovs-vsctl del-br {0}'.format(br_name)
-            _, error = Popen(cmd, stdout=PIPE, stderr=PIPE,
-                              shell=True).communicate()
+            _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
             return False if error else True
         else:
             raise IOError('Bridge name is NONE')
@@ -77,6 +83,9 @@ class Bridge():
         pass
     
     def dump_ports(self):
+        pass
+    
+    def vlan(self):
         pass
     
     def version(self):
