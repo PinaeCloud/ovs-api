@@ -1,5 +1,7 @@
 # coding=utf-8
 
+import json
+
 from ovs.utils import decorator
 from subprocess import Popen, PIPE
 
@@ -9,10 +11,30 @@ class Bridge():
         pass
     
     @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    def inspect(self, obj_type, obj_name):
+        cmd = 'ovs-vsctl list {0} {1}'.format(obj_type, obj_name)
+        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        objs = []
+        if not error:
+            obj = {}
+            for l in result.split('\n'):
+                if not l.strip():
+                    objs.append(obj)
+                    obj = {}
+                else:
+                    if ':' in l:
+                        key, value = l.split(':', 1)
+                        obj[key.strip()] = value.strip()
+        return objs
+    
+    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
     def list_br(self):
         cmd = 'ovs-vsctl list-br'
         result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate() 
         return [l.strip() for l in result.split('\n') if l.strip()] if not error else []
+    
+    def inspect_br(self, br_name):
+        return self.inspect('br', br_name)
                 
     def exists_br(self, br_name):
         if br_name:
@@ -53,6 +75,7 @@ class Bridge():
                     brs[br]['Port'][phy_port]['type'] = l.replace('type: ', '')
         return brs
     
+    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
     def add_br(self, br_name, parent = None, vlan = None):
         if br_name:
             cmd = 'ovs-vsctl add-br {0}'.format(br_name)
@@ -63,6 +86,7 @@ class Bridge():
         else:
             raise IOError('Bridge name is NONE')
     
+    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
     def del_br(self, br_name):
         if br_name:
             cmd = 'ovs-vsctl del-br {0}'.format(br_name)
@@ -76,6 +100,9 @@ class Bridge():
         cmd = 'ovs-vsctl list-ports {0}'.format(br_name)
         result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate() 
         return [l.strip() for l in result.split('\n') if l.strip()] if not error else []
+            
+    def inspect_port(self, port_name):
+        return self.inspect('port', port_name)
     
     @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
     def add_port(self, br_name, port_name, iface = None):
@@ -104,9 +131,6 @@ class Bridge():
         pass
     
     def mirror(self):
-        pass
-    
-    def version(self):
         pass
 
     

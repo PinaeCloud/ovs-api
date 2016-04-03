@@ -27,6 +27,10 @@ class BridgeTest(unittest.TestCase):
         brs = self.b.show_br()
         self.assertIn(self.br_name, brs)
         
+    def test_inspect_br(self):
+        brs = self.b.inspect_br(self.br_name)
+        self.assertEquals(brs[0].get('name'), self.br_name)
+        
 class PortsTest(unittest.TestCase):
     def setUp(self):
         self.br_name = 'obr-test'
@@ -47,4 +51,8 @@ class PortsTest(unittest.TestCase):
         ports = self.b.list_port(self.br_name)
         self.assertEquals(len(ports), 1)
         self.assertIn(self.port_name, ports)
+        
+    def test_inspect_port(self):
+        ports = self.b.inspect_port(self.port_name)
+        self.assertEquals(ports[0].get('name'), self.port_name)
         
