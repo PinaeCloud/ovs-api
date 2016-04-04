@@ -11,3 +11,14 @@ def check_cmd(cmd_list):
             return func( *args , **kwargs)
         return wrapper
     return decorators
+
+def check_arg(func):
+    def wrapper(*args, **kwargs):
+        symbol = ['|', '>', '<']
+        for arg in args:
+            if isinstance(arg, basestring):
+                for s in symbol:
+                    if s in arg:
+                        raise ValueError('Illegal arguments')
+        return func( *args , **kwargs)
+    return wrapper

@@ -1,7 +1,5 @@
 # coding=utf-8
 
-import json
-
 from ovs.utils import decorator
 from subprocess import Popen, PIPE
 
@@ -11,6 +9,7 @@ class Bridge():
         pass
     
     @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_arg
     def inspect(self, obj_type, obj_name):
         cmd = 'ovs-vsctl list {0} {1}'.format(obj_type, obj_name)
         result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
@@ -76,6 +75,7 @@ class Bridge():
         return brs
     
     @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_arg
     def add_br(self, br_name, parent = None, vlan = None):
         if br_name:
             cmd = 'ovs-vsctl add-br {0}'.format(br_name)
@@ -87,6 +87,7 @@ class Bridge():
             raise IOError('Bridge name is NONE')
     
     @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_arg
     def del_br(self, br_name):
         if br_name:
             cmd = 'ovs-vsctl del-br {0}'.format(br_name)
@@ -96,6 +97,7 @@ class Bridge():
             raise IOError('Bridge name is NONE')
         
     @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_arg
     def list_port(self, br_name):
         cmd = 'ovs-vsctl list-ports {0}'.format(br_name)
         result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate() 
@@ -105,6 +107,7 @@ class Bridge():
         return self.inspect('port', port_name)
     
     @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_arg
     def add_port(self, br_name, port_name, iface = None):
         if br_name and port_name:
             cmd = 'ovs-vsctl add-port {0} {1}'.format(br_name, port_name)
@@ -116,6 +119,7 @@ class Bridge():
             raise IOError('Bridge name or Port name is NONE')
     
     @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_arg
     def del_port(self, br_name, port_name):
         if br_name and port_name:
             cmd = 'ovs-vsctl del-port {0} {1}'.format(br_name, port_name)
