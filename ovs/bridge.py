@@ -8,32 +8,11 @@ class Bridge():
     def __init__(self):
         pass
     
-    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
-    @decorator.check_arg
-    def inspect(self, obj_type, obj_name):
-        cmd = 'ovs-vsctl list {0} {1}'.format(obj_type, obj_name)
-        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
-        objs = []
-        if not error:
-            obj = {}
-            for l in result.split('\n'):
-                if not l.strip():
-                    objs.append(obj)
-                    obj = {}
-                else:
-                    if ':' in l:
-                        key, value = l.split(':', 1)
-                        obj[key.strip()] = value.strip()
-        return objs
-    
-    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_cmd(['ovs-vsctl -V'])
     def list_br(self):
         cmd = 'ovs-vsctl list-br'
         result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate() 
         return [l.strip() for l in result.split('\n') if l.strip()] if not error else []
-    
-    def inspect_br(self, br_name):
-        return self.inspect('br', br_name)
                 
     def exists_br(self, br_name):
         if br_name:
@@ -42,7 +21,7 @@ class Bridge():
         else:
             raise IOError('Bridge name is NONE')
     
-    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_cmd(['ovs-vsctl -V'])
     def show_br(self):
         brs, br = {}, ''
         cmd = 'ovs-vsctl show'
@@ -74,7 +53,7 @@ class Bridge():
                     brs[br]['Port'][phy_port]['type'] = l.replace('type: ', '')
         return brs
     
-    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_cmd(['ovs-vsctl -V'])
     @decorator.check_arg
     def add_br(self, br_name, parent = None, vlan = None):
         if br_name:
@@ -86,7 +65,7 @@ class Bridge():
         else:
             raise IOError('Bridge name is NONE')
     
-    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_cmd(['ovs-vsctl -V'])
     @decorator.check_arg
     def del_br(self, br_name):
         if br_name:
@@ -96,17 +75,21 @@ class Bridge():
         else:
             raise IOError('Bridge name is NONE')
         
-    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_cmd(['ovs-vsctl -V'])
     @decorator.check_arg
     def list_port(self, br_name):
         cmd = 'ovs-vsctl list-ports {0}'.format(br_name)
         result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate() 
         return [l.strip() for l in result.split('\n') if l.strip()] if not error else []
-            
-    def inspect_port(self, port_name):
-        return self.inspect('port', port_name)
     
-    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_cmd(['ovs-vsctl -V'])
+    @decorator.check_arg
+    def list_port_to_br(self, port_name):
+        cmd = 'ovs-vsctl port-to-br {0}'.format(port_name)
+        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate() 
+        return [l.strip() for l in result.split('\n') if l.strip()] if not error else []
+    
+    @decorator.check_cmd(['ovs-vsctl -V'])
     @decorator.check_arg
     def add_port(self, br_name, port_name, iface = None):
         if br_name and port_name:
@@ -118,7 +101,7 @@ class Bridge():
         else:
             raise IOError('Bridge name or Port name is NONE')
     
-    @decorator.check_cmd(['ovs-vsctl --version > /dev/null'])
+    @decorator.check_cmd(['ovs-vsctl -V'])
     @decorator.check_arg
     def del_port(self, br_name, port_name):
         if br_name and port_name:
