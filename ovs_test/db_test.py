@@ -31,3 +31,29 @@ class OVSDBTest(unittest.TestCase):
         ports = self.d.list('port', self.port_name)
         self.assertEquals(ports[0].get('name'), self.port_name)
         
+    def test_set_port(self):
+        if self.d.set('port', self.port_name, {'tag' : 2}):
+            tag = self.d.get('port', self.port_name, 'tag')
+            self.assertEquals(tag, '2')
+        else:
+            self.fail('set: set port tag fail')
+            
+    def test_get_port(self):
+        result = self.d.get('port', self.port_name, 'name')
+        if result:
+            self.assertEquals(result, self.port_name)
+        else:
+            self.fail('get: get port name fail')
+            
+    def test_clear_port(self):
+        if self.d.set('port', self.port_name, {'tag' : 2}):
+            tag = self.d.get('port', self.port_name, 'tag')
+            self.assertEquals(tag, '2')
+            if self.d.clear('port', self.port_name, 'tag'):
+                tag = self.d.get('port', self.port_name, 'tag')
+                self.assertEquals(tag, '[]')
+            else:
+                self.fail('clear: clear port tag fail')
+        else:
+            self.fail('set: set port tag fail')
+        
