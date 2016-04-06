@@ -57,7 +57,7 @@ class Bridge():
     @decorator.check_arg
     def add_br(self, br_name, parent = None, vlan = None):
         if br_name:
-            cmd = 'ovs-vsctl add-br {0}'.format(br_name)
+            cmd = 'ovs-vsctl --may-exist add-br {0}'.format(br_name)
             if parent != None and vlan != None:
                 cmd = '{0} {1} {2}'.format(cmd, parent, vlan)
             _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
@@ -112,9 +112,6 @@ class Bridge():
             raise IOError('Bridge name or Port name is NONE')
     
     def dump_ports(self):
-        pass
-    
-    def vlan(self):
         pass
     
     def mirror(self):
