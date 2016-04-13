@@ -2,6 +2,7 @@
 
 import unittest
 from ovs import bridge
+from ovs import db
 
 class BridgeTest(unittest.TestCase):
     def setUp(self):
@@ -27,6 +28,7 @@ class BridgeTest(unittest.TestCase):
         brs = self.b.show_br()
         self.assertIn(self.br_name, brs)
         
+        
 class PortsTest(unittest.TestCase):
     def setUp(self):
         self.br_name = 'obr-test'
@@ -36,6 +38,7 @@ class PortsTest(unittest.TestCase):
             self.fail('add_br: add bridge fail : ' + self.br_name)
         if not self.b.add_port(self.br_name, self.port_name):
             self.fail('add_port: add port fail : ' + self.port_name)
+        self.d = db.OVSDB()
             
     def tearDown(self):
         if not self.b.del_port(self.br_name, self.port_name):
@@ -52,5 +55,22 @@ class PortsTest(unittest.TestCase):
         brs = self.b.list_port_to_br(self.port_name)
         self.assertEquals(len(brs), 1)
         self.assertIn(self.br_name, brs)
+        
+    def test_mirror(self):
+        self.b.add_port(self.br_name, 'in-port')
+        self.b.add_port(self.br_name, 'out-port')
+        
+        mirror_name = 'test-mirror'
+        if not self.b.mirror(mirror_name, self.br_name, ['in-port'], ['out-port']):
+            self.fail('mirror: mirror port fail')
+        mirror_lst = self.d.list('Mirror', mirror_name)
+        self.assertEquals(mirror_lst[0].get('name'), mirror_name)
+        if not self.b.unmirror(mirror_name, self.br_name):
+            self.fail('unmirror: unmirror port fail')
+            
+        self.b.del_port(self.br_name, 'in-port')
+        self.b.del_port(self.br_name, 'out-port')
+        
+            
         
         

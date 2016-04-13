@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from itertools import chain
 from ovs.utils import decorator
 from subprocess import Popen, PIPE
 
@@ -105,4 +106,34 @@ class Bridge():
         else:
             raise IOError('Bridge name or Port name is NONE')
 
+    def mirror(self, name, br_name, input_port, output_port, direction = None):
+        if name and br_name and input_port and output_port:
+            br_cmd = '-- set bridge {0} mirror=@m'.format(br_name)
+      
+            ports = chain(input_port, output_port)
+            ports_cmds = []
+            for port in ports:
+                ports_cmds.append('-- --id=@{0} get Port {0}'.format(port))
+                
+            mirror_cmd = '-- --id=@m create Mirror name={0}'.format(name)
+            if not direction or direction == 'in' or direction == 'all':
+                mirror_cmd += ' select-src-port=@' + ',@'.join(input_port)
+            if not direction or direction == 'out' or direction == 'all':
+                mirror_cmd += ' select-dst-port=@' + ',@'.join(input_port)
+            mirror_cmd += ' output-port=@' + ',@'.join(output_port)
+            
+            cmd = 'ovs-vsctl {0} {1} {2}'.format(br_cmd, ' '.join(ports_cmds), mirror_cmd)
+            _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+            return False if error else True
+        else:
+            raise IOError('Mirror namd or Bridge name or Ports is NONE')
+        
+    def unmirror(self, name, br_name):
+        if name and br_name:
+            cmd = 'ovs-vsctl clear Bridge {0} mirrors'.format(br_name)
+            _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+            return False if error else True
+        else:
+            raise IOError('Mirror namd or Bridge name is NONE')
+        
     
