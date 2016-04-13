@@ -31,21 +31,27 @@ class OVSDBTest(unittest.TestCase):
         ports = self.d.list('port', self.port_name)
         self.assertEquals(ports[0].get('name'), self.port_name)
         
-    def test_set_port(self):
+    def test_set(self):
         if self.d.set('port', self.port_name, {'tag' : 2}):
             tag = self.d.get('port', self.port_name, 'tag')
             self.assertEquals(tag, '2')
         else:
             self.fail('set: set port tag fail')
             
-    def test_get_port(self):
+        if self.d.set('port', self.port_name, {'other_config': {'comment' : 'Test Port'}}):
+            comment = self.d.get('port', self.port_name, 'other_config', 'comment')
+            self.assertEqual(comment, 'Test Port')
+        else:
+            self.fail('set: set port tag fail')
+            
+    def test_get(self):
         result = self.d.get('port', self.port_name, 'name')
         if result:
             self.assertEquals(result, self.port_name)
         else:
             self.fail('get: get port name fail')
             
-    def test_clear_port(self):
+    def test_clear(self):
         if self.d.set('port', self.port_name, {'tag' : 2}):
             tag = self.d.get('port', self.port_name, 'tag')
             self.assertEquals(tag, '2')
@@ -56,4 +62,29 @@ class OVSDBTest(unittest.TestCase):
                 self.fail('clear: clear port tag fail')
         else:
             self.fail('set: set port tag fail')
-        
+            
+    def test_add(self):
+        if self.d.add('port', self.port_name, 'trunks', '300'):
+            result = self.d.get('port', self.port_name, 'trunks')
+            if result:
+                self.assertEquals(result, '[300]')
+            else:
+                self.fail('get: get port comment fail')
+        else:
+            self.fail('add: add port comment')
+            
+    def test_remove(self):
+        if self.d.add('port', self.port_name, 'trunks', '300'):
+            result = self.d.get('port', self.port_name, 'trunks')
+            if result and result == '[300]':
+                if self.d.remove('port', self.port_name, 'trunks', '300'):
+                    result = self.d.get('port', self.port_name, 'trunks')
+                    self.assertEquals(result, '[]')
+                else:
+                    self.fail('remove: remove port comment fail')
+            else:
+                self.fail('get: get port comment fail')
+        else:
+            self.fail('add: add port comment fail')
+            
+                    
