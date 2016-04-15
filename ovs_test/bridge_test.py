@@ -65,12 +65,36 @@ class PortsTest(unittest.TestCase):
             self.fail('mirror: mirror port fail')
         mirror_lst = self.d.list('Mirror', mirror_name)
         self.assertEquals(mirror_lst[0].get('name'), mirror_name)
-        if not self.b.unmirror(mirror_name, self.br_name):
-            self.fail('unmirror: unmirror port fail')
+        if not self.b.no_mirror(self.br_name):
+            self.fail('no_mirror: no_mirror port fail')
             
         self.b.del_port(self.br_name, 'in-port')
         self.b.del_port(self.br_name, 'out-port')
         
+    def test_netflow(self):
+        if not self.b.netflow(self.br_name, '127.0.0.1', '5566', {'active-timeout':'30'}):
+            self.fail('netflow: enable netflow fail')
+        nf_lst = self.d.list('Netflow')
+        self.assertEquals(nf_lst[0].get('targets'), '["127.0.0.1:5566"]')
+        if not self.b.no_netflow(self.br_name):
+            self.fail('no_netflow: disable netflow fail')
+
+    def test_sflow(self):
+        if not self.b.sflow(self.br_name, 'eth1', '127.0.0.1', '6343', {'header':'128', 'sampling':'64', 
+                                                                        'polling':'10'}):
+            self.fail('sflow: enable sflow fail')
+        sf_lst = self.d.list('sflow')
+        self.assertEquals(sf_lst[0].get('targets'), '["127.0.0.1:6343"]')
+        self.assertEquals(sf_lst[0].get('agent'), '"eth1"')
+        if not self.b.no_sflow(self.br_name):
+            self.fail('no_sflow: disable sflow fail')  
             
-        
-        
+    def test_ipfix(self):
+        if not self.b.ipfix(self.br_name, '127.0.0.1', '4739', {'obs_domain_id':'123', 'obs_point_id':'456', 
+                                                                'cache_active_timeout':'60', 'cache_max_flows':'13'}):
+            self.fail('ipfix: enable ipfix fail')
+        ipfix_lst = self.d.list('IPFIX')
+        self.assertEquals(ipfix_lst[0].get('targets'), '["127.0.0.1:4739"]')
+        if not self.b.no_ipfix(self.br_name):
+            self.fail('no_ipfix: disable ipfix fail')
+            

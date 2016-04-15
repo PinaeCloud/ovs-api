@@ -1,15 +1,16 @@
 # coding=utf-8
 
 from itertools import chain
-from ovs.utils import decorator
 from subprocess import Popen, PIPE
+
+from ovs import db
+from ovs.utils import decorator
 
 class Bridge():
     
     @decorator.check_cmd(['ovs-vsctl -V'])
     def __init__(self):
         pass
-    
     
     def list_br(self):
         cmd = 'ovs-vsctl list-br'
@@ -128,12 +129,50 @@ class Bridge():
         else:
             raise IOError('Mirror namd or Bridge name or Ports is NONE')
         
-    def unmirror(self, name, br_name):
-        if name and br_name:
-            cmd = 'ovs-vsctl clear Bridge {0} mirrors'.format(br_name)
+    def no_mirror(self, br_name):
+        return self.__clear_br_attr(br_name, 'mirrors')
+        
+    def netflow(self, br_name, target_ip = '127.0.0.1', target_port = '5566', params = None):
+        return self.__flow_rec(br_name, 'netflow', target_ip, target_port, params)
+        
+    def no_netflow(self, br_name):
+        return self.__clear_br_attr(br_name, 'netflow')
+    
+    def sflow(self, br_name, agent, target_ip = '127.0.0.1', target_port = '6343', params = None):
+        if agent:
+            params = {} if not params else params
+            params['agent'] = agent
+        return self.__flow_rec(br_name, 'sflow', target_ip, target_port, params)
+        
+    def no_sflow(self, br_name):
+        return self.__clear_br_attr(br_name, 'sflow')
+    
+    def ipfix(self, br_name, target_ip = '127.0.0.1', target_port = '4739', params = None):
+        return self.__flow_rec(br_name, 'ipfix', target_ip, target_port, params)
+        
+    def no_ipfix(self, br_name): 
+        return self.__clear_br_attr(br_name, 'ipfix')
+    
+    def __flow_rec(self, br_name ,flow_type, target_ip, target_port, params):
+        if br_name:
+            cmd = 'ovs-vsctl -- set Bridge {0} {1}=@f '.format(br_name, flow_type) 
+            cmd += '-- --id=@f create {0} targets=\\"{1}:{2}\\" '.format(flow_type, target_ip, target_port)
+            cmd += self.__build_params(params)
             _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
             return False if error else True
         else:
-            raise IOError('Mirror namd or Bridge name is NONE')
-        
+            raise IOError('Bridge name is NONE')
     
+    def __clear_br_attr(self, br_name, col_name):
+        if br_name:
+            return db.OVSDB().clear('Bridge', br_name, col_name)
+        else:
+            raise IOError('Bridge name is NONE')
+        
+    def __build_params(self, params):
+        param_list = []
+        if params and isinstance(params, dict):
+            for key in params:
+                value = params.get(key)
+                param_list.append('{0}={1}'.format(key, value))
+        return ' '.join(param_list)
