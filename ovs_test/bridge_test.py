@@ -98,3 +98,33 @@ class PortsTest(unittest.TestCase):
         if not self.b.no_ipfix(self.br_name):
             self.fail('no_ipfix: disable ipfix fail')
             
+    def test_qos(self):
+        if not self.b.qos(self.port_name, 1200, 900):
+            self.fail('qos: enable qos fail')
+            
+        qos_lst = self.d.list('QoS')
+        self.assertEquals(qos_lst[0].get('type'), 'linux-htb')
+        self.assertEquals(qos_lst[0].get('other_config'), '{max-rate="1200000"}')
+        
+        queue_lst = self.d.list('Queue')
+        self.assertEquals(queue_lst[0].get('other_config'), '{max-rate="1200000", min-rate="900000"}')
+        
+        if not self.b.no_qos(self.port_name):
+            self.fail('no_qos: disable qos fail')
+        qos = self.d.get('Port', self.port_name, 'Qos')
+        self.assertEquals(qos, '[]')
+            
+    def test_ingress_rate(self):
+        if not self.b.ingress_rate(self.port_name, 1000, 100):
+            self.fail('ingress_rate: enable ingress_rate fail')
+            
+        if_lst = self.d.list('Interface', self.port_name)
+        self.assertEquals(if_lst[0].get('ingress_policing_rate'), '1000')
+        self.assertEquals(if_lst[0].get('ingress_policing_burst'), '100')
+        
+        if not self.b.no_ingress_rate(self.port_name):
+            self.fail('no_ingress_rate: disable ingress_rate fail')
+        if_lst = self.d.list('Interface', self.port_name)
+        self.assertEquals(if_lst[0].get('ingress_policing_rate'), '0')
+        self.assertEquals(if_lst[0].get('ingress_policing_burst'), '0')
+            

@@ -1,7 +1,8 @@
 # coding=utf-8
 
+from ovs import execute
+
 from ovs.utils import decorator
-from subprocess import Popen, PIPE
 
 class OVSDB():
     
@@ -18,7 +19,7 @@ class OVSDB():
     @decorator.check_arg
     def list(self, table, record = None):
         cmd = '{0} list {1} {2}'.format(self.cmd, table, record if record else '')
-        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        result, error = execute.exec_cmd(cmd)
         objs = []
         if not error:
             obj = {}
@@ -35,19 +36,19 @@ class OVSDB():
     @decorator.check_arg
     def find(self, table, condition):
         cmd = '{0} find {1} {2}'.format(self.cmd, table, condition)
-        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        result, error = execute.exec_cmd(cmd)
         return result.strip() if not error else None
     
     @decorator.check_arg
     def set(self, table, record, data):
         cmd = '{0} set {1} {2} {3}'.format(self.cmd, table, record, self.__data(data))
-        _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        _, error = execute.exec_cmd(cmd)
         return False if error else True
     
     @decorator.check_arg
     def get(self, table, record, column, key = None):
         cmd = '{0} get {1} {2} {3}{4}'.format(self.cmd, table, record, column, ':' + key if key else '')
-        result, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        result, error = execute.exec_cmd(cmd)
         if not error:
             result = result.strip()
             if result.startswith('"') and result.endswith('"'):
@@ -59,31 +60,31 @@ class OVSDB():
     @decorator.check_arg
     def clear(self, table, record, column):
         cmd = '{0} clear {1} {2} {3}'.format(self.cmd, table, record, column)
-        _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        _, error = execute.exec_cmd(cmd)
         return False if error else True
 
     @decorator.check_arg
     def add(self, table, record, column, data):
         cmd = '{0} add {1} {2} {3} {4}'.format(self.cmd, table, record, column, self.__data(data))
-        _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        _, error = execute.exec_cmd(cmd)
         return False if error else True
     
     @decorator.check_arg
     def remove(self, table, record, column, data):
         cmd = '{0} remove {1} {2} {3} {4}'.format(self.cmd, table, record, column, self.__data(data))
-        _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        _, error = execute.exec_cmd(cmd)
         return False if error else True
         
     @decorator.check_arg
     def create(self, table, data):
         cmd = '{0} create {1} {2}'.format(self.cmd, table, self.__data(data))
-        _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        _, error = execute.exec_cmd(cmd)
         return False if error else True
     
     @decorator.check_arg
     def destroy(self, table, record):
         cmd = '{0} destroy {1} {2}'.format(self.cmd, table, record)
-        _, error = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        _, error = execute.exec_cmd(cmd)
         return False if error else True
     
     def __data(self, data):
