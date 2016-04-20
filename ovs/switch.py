@@ -9,7 +9,6 @@ class SwitchLog():
     def __init__(self):
         pass
     
-    @decorator.check_arg
     def list_log(self):
         log_lst = {}
         cmd = 'ovs-appctl vlog/list'
