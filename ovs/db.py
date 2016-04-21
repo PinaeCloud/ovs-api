@@ -11,7 +11,7 @@ class OVSDB():
         self.cmd = 'ovs-vsctl'
         if db:
             self.cmd += ' --db=' + db
-        if timeout:
+        if timeout != None:
             self.cmd += ' --timeout=' + timeout
         if dry_run:
             self.cmd += ' --dry_run' 
@@ -44,6 +44,10 @@ class OVSDB():
         cmd = '{0} set {1} {2} {3}'.format(self.cmd, table, record, self.__data(data))
         _, error = execute.exec_cmd(cmd)
         return False if error else True
+    
+    @decorator.check_arg
+    def get_uuid(self, table, record):
+        return self.get(table, record, '_uuid') 
     
     @decorator.check_arg
     def get(self, table, record, column, key = None):
@@ -88,16 +92,17 @@ class OVSDB():
         return False if error else True
     
     def __data(self, data):
-        if data:
+        if data != None:
             if isinstance(data, dict):
                 kv = ''
                 for key in data:
                     value = data.get(key)
-                    if value:
+                    if value != None:
                         if isinstance(value, dict):
                             for sub_k in value:
                                 sub_v = value.get(sub_k)
-                                kv += ' {0}:{1}={2}'.format(key, sub_k, self.__convert(sub_v))
+                                if sub_v != None:
+                                    kv += ' {0}:{1}={2}'.format(key, sub_k, self.__convert(sub_v))
                         else:
                             kv += ' {0}={1}'.format(key, self.__convert(value))
                 return kv.strip()

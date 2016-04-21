@@ -9,7 +9,7 @@ class Bridge():
     
     @decorator.check_cmd(['ovs-vsctl -V'])
     def __init__(self):
-        pass
+        self.d = db.OVSDB()
     
     def list_br(self):
         cmd = 'ovs-vsctl list-br'
@@ -168,13 +168,12 @@ class Bridge():
             raise IOError('Port name is NONE')
     
     def no_qos(self, port_name, clean_policy = True):
-        d = db.OVSDB()
-        qos_id = d.get('Port', port_name, 'Qos')
-        queue_id = d.get('QoS', qos_id, 'queues:0')
+        qos_id = self.d.get('Port', port_name, 'Qos')
+        queue_id = self.d.get('QoS', qos_id, 'queues:0')
         if qos_id != '[]':
-            if d.clear('Port', port_name, 'qos'):
+            if self.d.clear('Port', port_name, 'qos'):
                 if clean_policy:
-                    if d.destroy('QoS', qos_id) and d.destroy('Queue', queue_id):
+                    if self.d.destroy('QoS', qos_id) and self.d.destroy('Queue', queue_id):
                         return True
                 else:
                     return True
@@ -185,24 +184,17 @@ class Bridge():
         if port_name:
             rate = 100 if not str(rate).isalnum() or rate < 0 else rate
             burst = 10 if not str(burst).isalnum() or burst < 0 else burst
-            cmd = 'ovs-vsctl set Interface {0} ingress_policing_rate={1}'.format(port_name, rate)
-            _, error = execute.exec_cmd(cmd)
-            if not error:
-                cmd = 'ovs-vsctl set Interface {0} ingress_policing_burst={1}'.format(port_name, burst)
-                _, error = execute.exec_cmd(cmd)
-            return False if error else True
+            
+            return True if self.d.set('Interface', port_name, {'ingress_policing_rate' : rate}) and \
+                self.d.set('Interface', port_name, {'ingress_policing_burst' : burst}) else False
                 
         else:
             raise IOError('Port name is NONE')
     
     def no_ingress_rate(self, port_name):
         if port_name:
-            cmd = 'ovs-vsctl set Interface {0} ingress_policing_rate=0'.format(port_name)
-            _, error = execute.exec_cmd(cmd)
-            if not error:
-                cmd = 'ovs-vsctl set Interface {0} ingress_policing_burst=0'.format(port_name)
-                _, error = execute.exec_cmd(cmd)
-            return False if error else True
+            return True if self.d.set('Interface', port_name, {'ingress_policing_rate' : 0}) and \
+                self.d.set('Interface', port_name, {'ingress_policing_burst' : 0}) else False
         else:
             raise IOError('Port name is NONE')
     
@@ -218,13 +210,13 @@ class Bridge():
     
     def __clear_br_attr(self, br_name, col_name):
         if br_name:
-            return db.OVSDB().clear('Bridge', br_name, col_name)
+            return self.d.clear('Bridge', br_name, col_name)
         else:
             raise IOError('Bridge name is NONE')
         
     def __clear_port_attr(self, port_name, col_name):
         if port_name:
-            return db.OVSDB().clear('Port', port_name, col_name)
+            return self.d.clear('Port', port_name, col_name)
         else:
             raise IOError('Port name is NONE')
         
