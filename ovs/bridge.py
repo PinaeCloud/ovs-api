@@ -106,6 +106,7 @@ class Bridge():
         else:
             raise IOError('Bridge name or Port name is NONE')
 
+    @decorator.check_arg
     def mirror(self, name, br_name, input_port, output_port, direction = None):
         if name and br_name and input_port and output_port:
             br_cmd = '-- set bridge {0} mirror=@m'.format(br_name)
@@ -128,30 +129,38 @@ class Bridge():
         else:
             raise IOError('Mirror name or Bridge name or Ports is NONE')
         
+    @decorator.check_arg
     def no_mirror(self, br_name):
         return self.__clear_br_attr(br_name, 'mirrors')
         
+    @decorator.check_arg
     def netflow(self, br_name, target_ip = '127.0.0.1', target_port = '5566', params = None):
         return self.__flow_rec(br_name, 'netflow', target_ip, target_port, params)
         
+    @decorator.check_arg
     def no_netflow(self, br_name):
         return self.__clear_br_attr(br_name, 'netflow')
     
+    @decorator.check_arg
     def sflow(self, br_name, agent, target_ip = '127.0.0.1', target_port = '6343', params = None):
         if agent:
             params = {} if not params else params
             params['agent'] = agent
         return self.__flow_rec(br_name, 'sflow', target_ip, target_port, params)
         
+    @decorator.check_arg
     def no_sflow(self, br_name):
         return self.__clear_br_attr(br_name, 'sflow')
     
+    @decorator.check_arg
     def ipfix(self, br_name, target_ip = '127.0.0.1', target_port = '4739', params = None):
         return self.__flow_rec(br_name, 'ipfix', target_ip, target_port, params)
         
+    @decorator.check_arg
     def no_ipfix(self, br_name): 
         return self.__clear_br_attr(br_name, 'ipfix')
     
+    @decorator.check_arg
     def qos(self, port_name, max_rate, min_rate):
         if port_name:
             max_rate = (100 if not str(max_rate).isalnum() or max_rate < 0 else max_rate) * 1000
@@ -167,6 +176,7 @@ class Bridge():
         else:
             raise IOError('Port name is NONE')
     
+    @decorator.check_arg
     def no_qos(self, port_name, clean_policy = True):
         qos_id = self.d.get('Port', port_name, 'Qos')
         queue_id = self.d.get('QoS', qos_id, 'queues:0')
@@ -179,7 +189,7 @@ class Bridge():
                     return True
         return False
                 
-    
+    @decorator.check_arg
     def ingress_rate(self, port_name, rate = 1000, burst = 100):
         if port_name:
             rate = 100 if not str(rate).isalnum() or rate < 0 else rate
@@ -191,12 +201,62 @@ class Bridge():
         else:
             raise IOError('Port name is NONE')
     
+    @decorator.check_arg
     def no_ingress_rate(self, port_name):
         if port_name:
             return True if self.d.set('Interface', port_name, {'ingress_policing_rate' : 0}) and \
                 self.d.set('Interface', port_name, {'ingress_policing_burst' : 0}) else False
         else:
             raise IOError('Port name is NONE')
+        
+    @decorator.check_arg
+    def tag(self, port_name, tag_id = 0): 
+        if port_name:
+            tag_id = 0 if tag_id < 0 or not isinstance(tag_id, int) else tag_id
+            return self.d.set('Port', port_name, {'tag' : tag_id})
+        else:
+            raise IOError('Port name is NONE')
+        
+    @decorator.check_arg
+    def no_tag(self, port_name):
+        return self.__clear_port_attr(port_name, 'tag')
+        
+    @decorator.check_arg
+    def trunk(self, port_name, trunk_id = 0):
+        if port_name:
+            trunk_id = 0 if trunk_id == None or trunk_id < 0 else trunk_id 
+            if isinstance(trunk_id, list):
+                trunk_id = [str(i) for i in trunk_id if not isinstance(i, basestring)]
+                trunk_id = ','.join(trunk_id)
+            return self.d.set('Port', port_name, {'trunk' : trunk_id})
+        else:
+            raise IOError('Port name is NONE')
+        
+    @decorator.check_arg
+    def no_trunk(self, port_name):
+        return self.__clear_port_attr(port_name, 'trunk')
+    
+    @decorator.check_arg
+    def bond(self, br_name, bond_name, ports, lacp = False, mode = None):
+        if br_name and bond_name and ports != None:
+            ports = ' '.join(ports)
+            cmd = 'ovs-vsctl add-bond {0} {1} {2}'.format(br_name, bond_name, ports)
+            _, error = execute.exec_cmd(cmd)
+            if not error:
+                err = False
+                if lacp:
+                    err = self.d.set('Port', bond_name, {'lacp' : 'active'})
+                if mode == 'slb':
+                    err = self.d.set('Port', bond_name, {'bond_mode' : 'balance-slb'})
+                elif mode == 'tcp':
+                    err = self.d.set('Port', bond_name, {'bond_mode' : 'balance-tcp'})
+                return err
+            else:
+                return False 
+            
+    @decorator.check_arg
+    def no_bond(self, br_name, bond_name):
+        return self.del_port(br_name, bond_name)
     
     def __flow_rec(self, br_name ,flow_type, target_ip, target_port, params):
         if br_name:
