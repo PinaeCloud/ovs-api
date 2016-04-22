@@ -88,3 +88,7 @@ class OVSDBTest(unittest.TestCase):
             self.fail('add: add port comment fail')
             
                     
+    def test_history(self):
+        history_list = self.d.history()
+        self.assertGreater(len(history_list), 0)
+        

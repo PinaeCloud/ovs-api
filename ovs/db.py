@@ -1,13 +1,17 @@
 # coding=utf-8
 
-from ovs import execute
+import os.path
+import time
+import json
 
+from ovs import execute
 from ovs.utils import decorator
 
 class OVSDB():
     
     @decorator.check_cmd(['ovs-vsctl -V'])
     def __init__(self, db = None, timeout = None, dry_run = False):
+        self.db = db
         self.cmd = 'ovs-vsctl'
         if db:
             self.cmd += ' --db=' + db
@@ -41,7 +45,7 @@ class OVSDB():
     
     @decorator.check_arg
     def set(self, table, record, data):
-        cmd = '{0} set {1} {2} {3}'.format(self.cmd, table, record, self.__data(data))
+        cmd = '{0} set {1} {2} {3}'.format(self.cmd, table, record, self.__build_params(data))
         _, error = execute.exec_cmd(cmd)
         return False if error else True
     
@@ -69,19 +73,19 @@ class OVSDB():
 
     @decorator.check_arg
     def add(self, table, record, column, data):
-        cmd = '{0} add {1} {2} {3} {4}'.format(self.cmd, table, record, column, self.__data(data))
+        cmd = '{0} add {1} {2} {3} {4}'.format(self.cmd, table, record, column, self.__build_params(data))
         _, error = execute.exec_cmd(cmd)
         return False if error else True
     
     @decorator.check_arg
     def remove(self, table, record, column, data):
-        cmd = '{0} remove {1} {2} {3} {4}'.format(self.cmd, table, record, column, self.__data(data))
+        cmd = '{0} remove {1} {2} {3} {4}'.format(self.cmd, table, record, column, self.__build_params(data))
         _, error = execute.exec_cmd(cmd)
         return False if error else True
         
     @decorator.check_arg
     def create(self, table, data):
-        cmd = '{0} create {1} {2}'.format(self.cmd, table, self.__data(data))
+        cmd = '{0} create {1} {2}'.format(self.cmd, table, self.__build_params(data))
         _, error = execute.exec_cmd(cmd)
         return False if error else True
     
@@ -91,7 +95,37 @@ class OVSDB():
         _, error = execute.exec_cmd(cmd)
         return False if error else True
     
-    def __data(self, data):
+    def history(self):
+        _, records = self.__read(self.db)
+        history_list = []
+        if records:
+            for r in records:
+                date = r.get('_date') if '_date' in r else None
+                comment = r.get('_comment') if '_comment' in r else None
+                if date and comment:
+                    date = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(date / 1000))
+                    history_list.append((date, comment))
+        return history_list 
+                    
+    def __read(self, db_path = None):
+        
+        db_path = '/etc/openvswitch/conf.db' if not db_path else db_path
+        if not os.path.exists(db_path):
+            return None, None
+        
+        summary, records = [], []
+        with open(db_path) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    if line.startswith('OVSDB'):
+                        _, _, t, h = line.split(' ')
+                        summary.append({'type': t, 'hash': h})
+                    else:
+                        records.append(json.loads(line))
+        return summary, records
+        
+    def __build_params(self, data):
         if data != None:
             if isinstance(data, dict):
                 kv = ''
@@ -114,3 +148,4 @@ class OVSDB():
         if not isinstance(value, basestring):
             value = str(value)
         return '"{0}"'.format(value) if ' ' in value else value
+    
