@@ -2,7 +2,7 @@
 
 import unittest
 
-from ovs.utils import text_utils
+from ovs.utils import json_utils
 from ovs import bridge
 from ovs import db
 
@@ -106,10 +106,10 @@ class PortsTest(unittest.TestCase):
             
         qos_lst = self.d.list('QoS')
         self.assertEquals(qos_lst[0].get('type'), 'linux-htb')
-        self.assertEquals(text_utils.parse_dict(qos_lst[0].get('other_config')).get('max-rate'), '1200000')
+        self.assertEquals(json_utils.parse_dict(qos_lst[0].get('other_config')).get('max-rate'), '1200000')
         
         queue_lst = self.d.list('Queue')
-        self.assertEquals(text_utils.parse_dict(queue_lst[0].get('other_config')).get('min-rate'), '900000')
+        self.assertEquals(json_utils.parse_dict(queue_lst[0].get('other_config')).get('min-rate'), '900000')
         
         if not self.b.no_qos(self.port_name):
             self.fail('no_qos: disable qos fail')
@@ -157,7 +157,7 @@ class PortsTest(unittest.TestCase):
         mode = self.d.get('Port', bond_name, 'bond_mode')
         self.assertEquals(mode, 'balance-slb')
         interfaces = self.d.get('Port', bond_name, 'interfaces')
-        if_list = text_utils.parse_list(interfaces)
+        if_list = json_utils.parse_list(interfaces)
         self.assertEquals(len(if_list), 2)
         
         if not self.b.no_bond(self.br_name, bond_name):
