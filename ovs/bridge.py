@@ -81,6 +81,11 @@ class Bridge():
         return [l.strip() for l in result.split('\n') if l.strip()] if not error else []
     
     @decorator.check_arg
+    def exists_port(self, br_name, port_name):
+        port_list = self.list_port(br_name)
+        return port_list and port_name in port_list
+    
+    @decorator.check_arg
     def list_port_to_br(self, port_name):
         cmd = 'ovs-vsctl port-to-br {0}'.format(port_name)
         result, error = execute.exec_cmd(cmd)
