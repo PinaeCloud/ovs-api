@@ -4,7 +4,7 @@ import os.path
 import time
 import json
 
-from ovs import execute
+from ovs.utils import execute
 from ovs.utils import decorator
 
 class OVSDB():
