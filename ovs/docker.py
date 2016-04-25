@@ -13,7 +13,39 @@ class Docker():
     def __init__(self):
         self.b = bridge.Bridge()
         self.d = db.OVSDB
+        
+    def add_network(self, br_name, br_ip):
+        if not br_name: 
+            raise ValueError('Openvswitch Bridge name is None')
+        
+        if not self.b.exists_br(br_name):
+            if not self.b.add_br(br_name):
+                raise IOError('Create new bridge fail')
+            
+        iface = ip_utils.IFace()
+        address = ip_utils.Address()
+        
+        if iface.exist_if(br_name):
+            iface.shutdown(br_name)
+            
+        if br_ip:
+            address.del_addr(br_name, br_ip)
+            if not address.add_addr(br_name, br_ip):
+                raise IOError('Set {0} IP fail'.format(br_name))
+        
+        if not iface.startup(br_name):
+            raise IOError('Startup {0} fail'.format(br_name))
+        
+        return True
     
+    def del_network(self, br_name):
+        if not br_name: 
+            raise ValueError('Openvswitch Bridge name is None')
+        if self.b.exists_br(br_name):
+            if not self.b.del_br(br_name):
+                raise IOError('Delete new bridge fail')
+        return True
+        
     def connect(self, container_name, br_name, ip, gateway = None, if_name = None, mtu = 1500, vlan = 0):
         
         if not container_name:

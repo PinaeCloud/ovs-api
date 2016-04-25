@@ -41,7 +41,7 @@ class IFace():
     
     @decorator.check_arg
     def shutdown(self, if_name):
-        _, error = execute.exec_cmd('{0} ip link set {0} down'.format(self.netns, if_name))
+        _, error = execute.exec_cmd('{0} ip link set {1} down'.format(self.netns, if_name))
         return False if error else True
 
 class Address():
