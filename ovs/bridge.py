@@ -2,7 +2,8 @@
 
 from itertools import chain
 
-from ovs import execute, db
+from ovs import db
+from ovs.utils import execute
 from ovs.utils import decorator
 
 class Bridge():

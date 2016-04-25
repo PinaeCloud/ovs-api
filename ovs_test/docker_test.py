@@ -2,7 +2,7 @@
 
 import unittest
 from ovs import bridge, docker
-from ovs import execute
+from ovs.utils import execute
 from ovs.utils import ip_utils
 
 class DockerTest(unittest.TestCase):

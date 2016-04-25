@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from ovs import execute
+from ovs.utils import execute
 from ovs.utils import decorator
 
 class IFace():

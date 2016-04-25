@@ -2,7 +2,7 @@
 
 import os.path
 
-from ovs import execute
+from ovs.utils import execute
 from ovs.utils import decorator
 from ovs.utils import ip_utils
 from ovs import bridge, db
