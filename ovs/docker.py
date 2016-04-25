@@ -14,12 +14,14 @@ class Docker():
         self.b = bridge.Bridge()
         self.d = db.OVSDB
     
-    def connect(self, container_name, br_name, ip, gateway, if_name = None, mtu = 1500, vlan = 0):
+    def connect(self, container_name, br_name, ip, gateway = None, if_name = None, mtu = 1500, vlan = 0):
         
         if not container_name:
             raise ValueError('Container name is None')
-        if not ip or not gateway:
-            raise ValueError('IP or Gateway is None')
+        if not br_name:
+            raise ValueError('Openvswitch Bridge name is None')
+        if not ip:
+            raise ValueError('IP is None')
         
         # Get Docker container PID
         c_pid = self.__get_container_pid(container_name)
@@ -38,9 +40,10 @@ class Docker():
         guest_if = 'v{0}pg{1}'.format(if_name, c_pid)
         
         # Add new local interface and guest interface
-        if not iface.exist_if(local_if):
-            if not iface.add_veth_peer_if(local_if, guest_if, mtu):
-                raise IOError('Add new interface {0}　and {1} fail'.format(local_if, guest_if))
+        if iface.exist_if(local_if):
+            iface.del_if(local_if)
+        if not iface.add_veth_peer_if(local_if, guest_if, mtu):
+            raise IOError('Add new interface {0}　and {1} fail'.format(local_if, guest_if))
         
         # Add local interface to openvswitch
         if not self.b.exists_br(br_name):
@@ -90,21 +93,15 @@ class Docker():
         
         return True
     
-    def disconnect(self, container_name, br_name, if_name):
+    def disconnect(self, container_name, br_name, if_name = None):
         c_pid = self.__get_container_pid(container_name)
         self.__ln_netns(c_pid)
         
         iface = ip_utils.IFace()
-        netns = ip_utils.Netns()
-        guest_iface = ip_utils.IFace(netns.get_exec(c_pid))
         
         # Set local interface name and guest interface name
         if_name = 'eth0' if not if_name else if_name
         local_if = 'v{0}pl{1}'.format(if_name, c_pid)
-        
-        # Rename guest interface
-        if guest_iface.exist_if(if_name):
-            guest_iface.del_if(if_name)
         
         # Delete ovs interface 
         if self.b.exists_port(br_name, local_if):
@@ -125,5 +122,5 @@ class Docker():
         execute.exec_cmd('rm -f /var/run/netns/{0}'.format(c_pid))
         if not os.path.exists('/var/run/netns'):
             os.makedirs('/var/run/netns', 0755)
-            execute.exec_cmd('ln -s /proc/{0}/ns/net /var/run/netns/{0}'.format(c_pid))
+        execute.exec_cmd('ln -s /proc/{0}/ns/net /var/run/netns/{0}'.format(c_pid))
         
