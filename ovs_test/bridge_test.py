@@ -2,9 +2,10 @@
 
 import unittest
 
-from ovs.utils import json_utils
 from ovs import bridge
-from ovs import db
+from ovs import ovsdb
+from ovs.utils import json_utils
+from ovs.utils import tap_utils
 
 class BridgeTest(unittest.TestCase):
     def setUp(self):
@@ -30,21 +31,27 @@ class BridgeTest(unittest.TestCase):
         brs = self.b.show_br()
         self.assertIn(self.br_name, brs)
         
-        
 class PortsTest(unittest.TestCase):
     def setUp(self):
         self.br_name = 'obr-test'
         self.port_name = 'vport-test'
+        
         self.b = bridge.Bridge()
+        self.d = ovsdb.OVSDB()
+        self.t = tap_utils.Tap()
+        
         if not self.b.add_br(self.br_name):
             self.fail('add_br: add bridge fail : ' + self.br_name)
+        if not self.t.add_tap(self.port_name):
+            self.fail('add_tap: add tap fail : ' + self.port_name)
         if not self.b.add_port(self.br_name, self.port_name):
             self.fail('add_port: add port fail : ' + self.port_name)
-        self.d = db.OVSDB()
             
     def tearDown(self):
         if not self.b.del_port(self.br_name, self.port_name):
             self.fail('del_port: delete port fail : ' + self.port_name)
+        if not self.t.del_tap(self.port_name):
+            self.fail('del_tap: delete tap fail : ' + self.port_name)
         if not self.b.del_br(self.br_name):
             self.fail('del_br: delete bridge fail : ' + self.br_name)
             
@@ -59,19 +66,25 @@ class PortsTest(unittest.TestCase):
         self.assertIn(self.br_name, brs)
         
     def test_mirror(self):
-        self.b.add_port(self.br_name, 'in-port')
-        self.b.add_port(self.br_name, 'out-port')
+        in_port, out_port = 'in-port', 'out-port'
+        
+        self.t.add_tap(in_port)
+        self.t.add_tap(out_port)
+        self.b.add_port(self.br_name, in_port)
+        self.b.add_port(self.br_name, out_port)
         
         mirror_name = 'test-mirror'
-        if not self.b.mirror(mirror_name, self.br_name, ['in-port'], ['out-port']):
+        if not self.b.mirror(mirror_name, self.br_name, [in_port], [out_port]):
             self.fail('mirror: mirror port fail')
         mirror_lst = self.d.list('Mirror', mirror_name)
         self.assertEquals(mirror_lst[0].get('name'), mirror_name)
         if not self.b.no_mirror(self.br_name):
             self.fail('no_mirror: no_mirror port fail')
             
-        self.b.del_port(self.br_name, 'in-port')
-        self.b.del_port(self.br_name, 'out-port')
+        self.b.del_port(self.br_name, in_port)
+        self.b.del_port(self.br_name, out_port)
+        self.t.del_tap(in_port)
+        self.t.del_tap(out_port)
         
     def test_netflow(self):
         if not self.b.netflow(self.br_name, '127.0.0.1', '5566', {'active-timeout':'30'}):
@@ -148,8 +161,12 @@ class PortsTest(unittest.TestCase):
             
     def test_bond(self):
         bond_name = 'test-bond'
+        port1, port2 = 'port1', 'port2'
         
-        if not self.b.bond(self.br_name, bond_name, ['port-1', 'port-2'], True, 'slb'):
+        self.t.add_tap(port1)
+        self.t.add_tap(port2)
+        
+        if not self.b.bond(self.br_name, bond_name, [port1, port2], True, 'slb'):
             self.fail('bond: bond port fail')
             
         lacp = self.d.get('Port', bond_name, 'lacp')
@@ -162,4 +179,8 @@ class PortsTest(unittest.TestCase):
         
         if not self.b.no_bond(self.br_name, bond_name):
             self.fail('not_tag: clear port trunk fail')
+
+        self.t.del_tap(port1)
+        self.t.del_tap(port2)
+        
             

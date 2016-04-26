@@ -66,11 +66,11 @@ class OVSDB():
             return None
     
     @decorator.check_arg
-    def clear(self, table, record, column):
-        if not isinstance(column, list) or not isinstance(column, set):
-            column = [str(column)]
-        for item in list:
-            cmd = '{0} clear {1} {2} {3}'.format(self.cmd, table, record, item)
+    def clear(self, table, record, columns):
+        if not isinstance(columns, list) or not isinstance(columns, set):
+            columns = [str(columns)]
+        for column in columns:
+            cmd = '{0} clear {1} {2} {3}'.format(self.cmd, table, record, column)
             _, error = execute.exec_cmd(cmd)
             if error:
                 return False

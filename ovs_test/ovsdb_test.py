@@ -1,7 +1,10 @@
 # coding=utf-8
 
 import unittest
-from ovs import bridge, db
+
+from ovs import bridge
+from ovs import ovsdb
+from ovs.utils import tap_utils
 
 class OVSDBTest(unittest.TestCase):
     def setUp(self):
@@ -10,16 +13,21 @@ class OVSDBTest(unittest.TestCase):
         self.port_name = 'vport-test'
         
         self.b = bridge.Bridge()
+        self.d = ovsdb.OVSDB()
+        self.t = tap_utils.Tap()
+        
         if not self.b.add_br(self.br_name):
             self.fail('add_br: add bridge fail : ' + self.br_name)
+        if not self.t.add_tap(self.port_name):
+            self.fail('add_tap: add tap fail : ' + self.port_name)
         if not self.b.add_port(self.br_name, self.port_name):
             self.fail('add_port: add port fail : ' + self.port_name)
-            
-        self.d = db.OVSDB()
-            
+        
     def tearDown(self):
         if not self.b.del_port(self.br_name, self.port_name):
             self.fail('del_port: delete port fail : ' + self.port_name)
+        if not self.t.del_tap(self.port_name):
+            self.fail('del_tap: delete tap fail : ' + self.port_name)
         if not self.b.del_br(self.br_name):
             self.fail('del_br: delete bridge fail : ' + self.br_name)
             

@@ -2,7 +2,7 @@
 
 from itertools import chain
 
-from ovs import db
+from ovs import ovsdb
 from ovs.utils import execute
 from ovs.utils import decorator
 
@@ -10,7 +10,7 @@ class Bridge():
     
     @decorator.check_cmd(['ovs-vsctl -V'])
     def __init__(self):
-        self.d = db.OVSDB()
+        self.d = ovsdb.OVSDB()
     
     def list_br(self):
         cmd = 'ovs-vsctl list-br'

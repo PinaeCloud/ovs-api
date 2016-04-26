@@ -5,14 +5,15 @@ import os.path
 from ovs.utils import execute
 from ovs.utils import decorator
 from ovs.utils import ip_utils
-from ovs import bridge, db
+from ovs import bridge
+from ovs import ovsdb
 
 class Docker():
     
     @decorator.check_cmd(['ip -V', 'ovs-vsctl -V', 'docker -v'])
     def __init__(self):
         self.b = bridge.Bridge()
-        self.d = db.OVSDB
+        self.d = ovsdb.OVSDB
         
     def add_network(self, br_name, br_ip):
         if not br_name: 
