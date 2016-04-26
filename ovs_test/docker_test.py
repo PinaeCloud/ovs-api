@@ -36,3 +36,6 @@ class DockerTest(unittest.TestCase):
         execute.exec_cmd('docker stop ' + container_name)
         execute.exec_cmd('docker rm ' + container_name)
         
+if __name__ =='__main__':  
+    unittest.main()  
+        

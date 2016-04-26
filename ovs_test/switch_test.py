@@ -25,4 +25,6 @@ class SwitchLogTest(unittest.TestCase):
         self.assertEquals(module.get('syslog'), 'INFO')
         
         self.s.set_log('bfd', 'syslog', 'ERR')
-        
+
+if __name__ =='__main__':  
+    unittest.main()          

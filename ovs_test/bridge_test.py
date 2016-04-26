@@ -197,3 +197,6 @@ class PortsTest(unittest.TestCase):
         if not self.b.no_tunnel(self.port_name):
             self.fail('no_tunnel: clear tunnel fail')
             
+if __name__ =='__main__':  
+    unittest.main()  
+            

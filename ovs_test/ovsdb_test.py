@@ -100,3 +100,5 @@ class OVSDBTest(unittest.TestCase):
         history_list = self.d.history()
         self.assertGreater(len(history_list), 0)
         
+if __name__ =='__main__':  
+    unittest.main()  
