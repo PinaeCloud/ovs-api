@@ -16,7 +16,7 @@ class DockerTest(unittest.TestCase):
         c_ip, c_mask = '192.168.150.3', '24'
         
         c_pid, error = execute.exec_cmd('docker inspect --format={{.State.Pid}} ' + container_name)
-        if not c_pid or error:
+        if c_pid.strip() and not error:
             self.__delete_container(container_name)
             
         execute.exec_cmd('docker run -d --name {0} --net=none interhui/alpine-ssh /usr/sbin/sshd -D'.format(container_name))
