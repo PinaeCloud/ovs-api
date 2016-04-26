@@ -67,9 +67,14 @@ class OVSDB():
     
     @decorator.check_arg
     def clear(self, table, record, column):
-        cmd = '{0} clear {1} {2} {3}'.format(self.cmd, table, record, column)
-        _, error = execute.exec_cmd(cmd)
-        return False if error else True
+        if not isinstance(column, list) or not isinstance(column, set):
+            column = [str(column)]
+        for item in list:
+            cmd = '{0} clear {1} {2} {3}'.format(self.cmd, table, record, item)
+            _, error = execute.exec_cmd(cmd)
+            if error:
+                return False
+        return True
 
     @decorator.check_arg
     def add(self, table, record, column, data):

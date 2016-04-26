@@ -22,7 +22,7 @@ class Bridge():
             brs = self.list_br()
             return True if br_name in brs else False
         else:
-            raise IOError('Bridge name is NONE')
+            raise ValueError('Bridge name is NONE')
     
     def show_br(self):
         brs, br = {}, ''
@@ -64,7 +64,7 @@ class Bridge():
             _, error = execute.exec_cmd(cmd)
             return False if error else True
         else:
-            raise IOError('Bridge name is NONE')
+            raise ValueError('Bridge name is NONE')
     
     @decorator.check_arg
     def del_br(self, br_name):
@@ -73,7 +73,7 @@ class Bridge():
             _, error = execute.exec_cmd(cmd)
             return False if error else True
         else:
-            raise IOError('Bridge name is NONE')
+            raise ValueError('Bridge name is NONE')
         
     @decorator.check_arg
     def list_port(self, br_name):
@@ -101,7 +101,7 @@ class Bridge():
             _, error = execute.exec_cmd(cmd)
             return False if error else True
         else:
-            raise IOError('Bridge name or Port name is NONE')
+            raise ValueError('Bridge name or Port name is NONE')
     
     @decorator.check_arg
     def del_port(self, br_name, port_name):
@@ -110,7 +110,7 @@ class Bridge():
             _, error = execute.exec_cmd(cmd)
             return False if error else True
         else:
-            raise IOError('Bridge name or Port name is NONE')
+            raise ValueError('Bridge name or Port name is NONE')
 
     @decorator.check_arg
     def mirror(self, name, br_name, input_port, output_port, direction = None):
@@ -133,7 +133,7 @@ class Bridge():
             _, error = execute.exec_cmd(cmd)
             return False if error else True
         else:
-            raise IOError('Mirror name or Bridge name or Ports is NONE')
+            raise ValueError('Mirror name or Bridge name or Ports is NONE')
         
     @decorator.check_arg
     def no_mirror(self, br_name):
@@ -180,7 +180,7 @@ class Bridge():
             _, error = execute.exec_cmd(cmd)
             return False if error else True
         else:
-            raise IOError('Port name is NONE')
+            raise ValueError('Port name is NONE')
     
     @decorator.check_arg
     def no_qos(self, port_name, clean_policy = True):
@@ -205,7 +205,7 @@ class Bridge():
                 self.d.set('Interface', port_name, {'ingress_policing_burst' : burst}) else False
                 
         else:
-            raise IOError('Port name is NONE')
+            raise ValueError('Port name is NONE')
     
     @decorator.check_arg
     def no_ingress_rate(self, port_name):
@@ -213,7 +213,7 @@ class Bridge():
             return True if self.d.set('Interface', port_name, {'ingress_policing_rate' : 0}) and \
                 self.d.set('Interface', port_name, {'ingress_policing_burst' : 0}) else False
         else:
-            raise IOError('Port name is NONE')
+            raise ValueError('Port name is NONE')
         
     @decorator.check_arg
     def tag(self, port_name, tag_id = 0): 
@@ -221,7 +221,7 @@ class Bridge():
             tag_id = 0 if tag_id < 0 or not isinstance(tag_id, int) else tag_id
             return self.d.set('Port', port_name, {'tag' : tag_id})
         else:
-            raise IOError('Port name is NONE')
+            raise ValueError('Port name is NONE')
         
     @decorator.check_arg
     def no_tag(self, port_name):
@@ -236,7 +236,7 @@ class Bridge():
                 trunk_id = ','.join(trunk_id)
             return self.d.set('Port', port_name, {'trunk' : trunk_id})
         else:
-            raise IOError('Port name is NONE')
+            raise ValueError('Port name is NONE')
         
     @decorator.check_arg
     def no_trunk(self, port_name):
@@ -259,10 +259,41 @@ class Bridge():
                 return err
             else:
                 return False 
-            
+        else:
+            raise ValueError('Bridge name or Bond name is NONE')
+        
     @decorator.check_arg
     def no_bond(self, br_name, bond_name):
         return self.del_port(br_name, bond_name)
+    
+    @decorator.check_arg
+    def tunnel(self, if_name, tunnel_type, local_ip, remote_ip, psk = None):
+        if not if_name:
+            raise ValueError('Interface name is None')
+        tunnel_type = 'gre' if not tunnel_type else tunnel_type
+        if tunnel_type not in ['ipsec_gre', 'gre', 'vxlan']:
+            raise ValueError('Unknown tunnel type : {0}'.format(tunnel_type))
+        if not local_ip or not remote_ip:
+            raise ValueError('Local IP or Remote IP is None')
+        
+        data = {'type': tunnel_type, 'options:local_ip': local_ip, 'options:remote_ip': remote_ip}
+        if psk and 'ipsec' in tunnel_type:
+            data['options:psk'] = psk
+        return self.d.set('Interface', if_name, data)
+    
+    @decorator.check_arg
+    def no_tunnel(self, if_name):
+        return self.d.destroy('Interface', if_name)
+    
+    @decorator.check_arg
+    def enable_stp(self, br_name):
+        if br_name:
+            return self.d.set('Bridge', br_name, {'stp_enable' : 'true'})
+        else:
+            raise ValueError('Bridge name is None')
+        
+    def disable_stp(self, br_name):
+        return self.__clear_br_attr(br_name, 'stp_enable')
     
     def __flow_rec(self, br_name ,flow_type, target_ip, target_port, params):
         if br_name:
