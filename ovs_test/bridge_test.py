@@ -183,4 +183,17 @@ class PortsTest(unittest.TestCase):
         self.t.del_tap(port1)
         self.t.del_tap(port2)
         
+    def test_tunnel(self):
+        if not self.b.tunnel(self.port_name, 'gre', '192.168.100.3', '192.168.100.6'):
+            self.fail('tunnel: create tunnel fail')
+            
+        local_ip = self.d.get('Interface', self.port_name, 'options', 'local_ip')
+        self.assertEquals(local_ip, '192.168.100.3')
+        remote_ip = self.d.get('Interface', self.port_name, 'options', 'remote_ip')
+        self.assertEquals(remote_ip, '192.168.100.6')
+        tunnel_type = self.d.get('Interface', self.port_name, 'type')
+        self.assertEquals(tunnel_type, 'gre')
+        
+        if not self.b.no_tunnel(self.port_name):
+            self.fail('no_tunnel: clear tunnel fail')
             
