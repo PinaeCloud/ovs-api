@@ -18,7 +18,8 @@ logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
 def exec_cmd(cmd):
-    
+    if not cmd.strip():
+        raise ValueError('Command is Empty')
     if cmd and isinstance(cmd, basestring):
         cmd = cmd.strip()
         if enable_log_command :
