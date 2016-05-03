@@ -38,4 +38,8 @@ class SwitchLog():
         cmd = 'ovs-appctl vlog/set FACILITY:{0}'.format(facility)
         _, error = execute.exec_cmd(cmd)
         return False if error else True
-        
+
+class SwitchController():
+    
+    def __init__(self):
+        pass
